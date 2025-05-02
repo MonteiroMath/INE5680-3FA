@@ -8,7 +8,7 @@ server = Server()
 nome, senha, pais = client.cadastrar_usuario()
 
 # registra um usuário no servidor
-server.adicionar_usuario(nome, senha, pais)
+pyotp_secret = server.adicionar_usuario(nome, senha, pais)
 
 
 # solicita dados de login ao usuário

@@ -1,6 +1,7 @@
 import os
 import hashlib
 import base64
+import pyotp
 
 
 class Server:
@@ -13,13 +14,22 @@ class Server:
         # Obtém hash da senha com SCRYPT e o respectivo salt
         senha_hashed, salt = self.hash_senha(senha)
 
+        # Gera o secret para o pyotp
+        pyotp_secret = pyotp.random_base32()
+
         # Cria novo usuário com hash da senha e o respectivo salt, após realizar o encoding em base64
-        novo_usuario = {"nome": nome, "senha": encodeStrToBase64(
-            senha_hashed), "salt": encodeStrToBase64(salt), "pais": pais}
+        novo_usuario = {
+            "nome": nome,
+            "senha": encodeStrToBase64(senha_hashed),
+            "salt": encodeStrToBase64(salt),
+            "pais": pais,
+            "pyotp_secret": pyotp_secret
+        }
 
         # Armazena usuários em memória
         self._usuarios[nome] = novo_usuario
         print(self._usuarios)
+        return pyotp_secret
 
     def autenticar_usuario(self, nome: str, senha: str, pais: str):
 
