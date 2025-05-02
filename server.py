@@ -19,8 +19,9 @@ class Server:
 
         # Armazena usuários em memória
         self._usuarios[nome] = novo_usuario
+        print(self._usuarios)
 
-    def autenticar_usuario(self, nome, senha):
+    def autenticar_usuario(self, nome: str, senha: str, pais: str):
 
         try:
             usuario = self.obter_usuario_por_nome(nome)
@@ -33,7 +34,15 @@ class Server:
 
         senha_hashed, _ = self.hash_senha(senha, decodeStrFromBase64(salt))
 
-        print(senha_hashed == senha_registrada)
+        if (not (senha_hashed == senha_registrada)):
+            print("Senha incorreta")
+            return
+
+        if (not (pais == usuario["pais"])):
+            print("Localização inválida")
+            return
+
+        print("Usuário autenticado")
 
     def obter_usuario_por_nome(self, nome):
 

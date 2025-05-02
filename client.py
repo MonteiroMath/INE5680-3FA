@@ -14,11 +14,12 @@ class Client:
         print("Login: ")
         nome = input("Informe seu nome: ")
         senha = input("Informe sua senha: ")
-        return (nome, senha)
+        pais = self.obter_pais()
+        return (nome, senha, pais)
 
     def obter_pais(self):
 
-        access_token = 'token_here'
+        access_token = 'token_placeholder'
         handler = ipinfo.getHandler(access_token)
         details = handler.getDetails()
 

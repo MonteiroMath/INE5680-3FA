@@ -13,6 +13,6 @@ server.adicionar_usuario(nome, senha, pais)
 
 # solicita dados de login ao usuário
 
-nome, senha = client.logar_usuario()
+nome, senha, pais = client.logar_usuario()
 
-server.autenticar_usuario(nome, senha)
+server.autenticar_usuario(nome, senha, pais)
