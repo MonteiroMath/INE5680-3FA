@@ -17,3 +17,6 @@ nome, senha, pais, totp_code = client.logar_usuario()
 
 # Solicita login ao servidor
 server.autenticar_usuario(nome, senha, pais, totp_code)
+
+mensagem = client.enviar_mensagem()
+print(mensagem)

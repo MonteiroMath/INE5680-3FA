@@ -57,6 +57,7 @@ class Server:
 
         if(not totp_check):
            print("One Time Password inválido")
+           return
 
         print("Usuário autenticado")
 
