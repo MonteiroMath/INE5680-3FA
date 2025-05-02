@@ -1,4 +1,8 @@
+import os
 import ipinfo
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Client:
@@ -19,7 +23,7 @@ class Client:
 
     def obter_pais(self):
 
-        access_token = 'token_placeholder'
+        access_token = os.environ["API_KEY"]
         handler = ipinfo.getHandler(access_token)
         details = handler.getDetails()
 
