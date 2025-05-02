@@ -31,7 +31,7 @@ class Server:
         print(self._usuarios)
         return pyotp_secret
 
-    def autenticar_usuario(self, nome: str, senha: str, pais: str):
+    def autenticar_usuario(self, nome: str, senha: str, pais: str, totp_code: str):
 
         try:
             usuario = self.obter_usuario_por_nome(nome)
@@ -51,6 +51,12 @@ class Server:
         if (not (pais == usuario["pais"])):
             print("Localização inválida")
             return
+        
+        totp = pyotp.TOTP(usuario["pyotp_secret"])
+        totp_check = totp.verify(totp_code)
+
+        if(not totp_check):
+           print("One Time Password inválido")
 
         print("Usuário autenticado")
 
