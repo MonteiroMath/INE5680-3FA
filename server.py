@@ -8,14 +8,14 @@ class Server:
     def __init__(self):
         self._usuarios = {}
 
-    def adicionar_usuario(self, nome, senha):
+    def adicionar_usuario(self, nome: str, senha: str, pais: str):
 
         # Obtém hash da senha com SCRYPT e o respectivo salt
         senha_hashed, salt = self.hash_senha(senha)
 
         # Cria novo usuário com hash da senha e o respectivo salt, após realizar o encoding em base64
         novo_usuario = {"nome": nome, "senha": encodeStrToBase64(
-            senha_hashed), "salt": encodeStrToBase64(salt)}
+            senha_hashed), "salt": encodeStrToBase64(salt), "pais": pais}
 
         # Armazena usuários em memória
         self._usuarios[nome] = novo_usuario
