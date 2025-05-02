@@ -6,7 +6,7 @@ import base64
 class Server:
 
     def __init__(self):
-        self._usuarios = []
+        self._usuarios = {}
 
     def adicionar_usuario(self, nome, senha):
 
@@ -14,23 +14,42 @@ class Server:
         senha_hashed, salt = self.hash_senha(senha)
 
         # Cria novo usuário com hash da senha e o respectivo salt, após realizar o encoding em base64
-        novo_usuario = {"nome": nome, "senha": encodeStr(
-            senha_hashed), "salt": encodeStr(salt)}
+        novo_usuario = {"nome": nome, "senha": encodeStrToBase64(
+            senha_hashed), "salt": encodeStrToBase64(salt)}
 
         # Armazena usuários em memória
-        self._usuarios.append(novo_usuario)
+        self._usuarios[nome] = novo_usuario
 
+    def autenticar_usuario(self, nome, senha):
 
-    def hash_senha(self, senha):
-        # Cria um salt e aplica o SCRYPT à senha
+        try:
+            usuario = self.obter_usuario_por_nome(nome)
+        except KeyError:
+            print(f"Usuário com o nome {nome} não localizado")
+            return
+
+        senha_registrada = decodeStrFromBase64(usuario["senha"])
+        salt = usuario["salt"]
+
+        senha_hashed, _ = self.hash_senha(senha, decodeStrFromBase64(salt))
+
+        print(senha_hashed == senha_registrada)
+
+    def obter_usuario_por_nome(self, nome):
+
+        return self._usuarios[nome]
+
+    def hash_senha(self, senha: str, salt: bytes = None):
+        # Aplica o SCRYPT à senha. Cria um salt se um não foi informado.
 
         # Obtém os bytes da string contendo a senha
         senha_bytes = senha.encode()
-        
-        
+
         # Parâmetros para SCRYPT conforme documentação: https://docs.python.org/3/library/hashlib.html#hashlib.scrypt
 
-        salt = os.urandom(16)
+        if salt is None:
+            salt = os.urandom(16)
+
         cost_factor = 2**14
         block_size = 8
         parallelization_factor = 1
@@ -42,6 +61,11 @@ class Server:
         return senha_hashed, salt
 
 
-def encodeStr(bytes):
-    ## Encoda uma sequencia de bytes em base64, decoda e retorna a string equivalente
+def encodeStrToBase64(bytes: bytes):
+    # Encoda uma sequencia de bytes em base64, decoda e retorna a string equivalente
     return base64.b64encode(bytes).decode()
+
+
+def decodeStrFromBase64(bytes: bytes):
+    # Decoda uma string em uma sequência de bytes de base 64
+    return base64.b64decode(bytes)

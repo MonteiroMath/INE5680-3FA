@@ -6,3 +6,10 @@ class Client:
         nome = input("Informe seu nome: ")
         senha = input("Informe sua senha: ")
         return (nome, senha)
+
+
+    def logar_usuario(self):
+        print("Login: ")
+        nome = input("Informe seu nome: ")
+        senha = input("Informe sua senha: ")
+        return (nome, senha)
