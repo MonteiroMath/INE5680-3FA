@@ -19,4 +19,4 @@ nome, senha, pais, totp_code = client.logar_usuario()
 server.autenticar_usuario(nome, senha, pais, totp_code)
 
 mensagem = client.enviar_mensagem()
-print(mensagem)
+server.receber_mensagem(nome, mensagem)

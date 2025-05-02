@@ -1,7 +1,10 @@
 import os
+import hmac
+import hashlib
 import hashlib
 import base64
 import pyotp
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 class Server:
@@ -28,7 +31,6 @@ class Server:
 
         # Armazena usuários em memória
         self._usuarios[nome] = novo_usuario
-        print(self._usuarios)
         return pyotp_secret
 
     def autenticar_usuario(self, nome: str, senha: str, pais: str, totp_code: str):
@@ -51,15 +53,28 @@ class Server:
         if (not (pais == usuario["pais"])):
             print("Localização inválida")
             return
-        
+
         totp = pyotp.TOTP(usuario["pyotp_secret"])
         totp_check = totp.verify(totp_code)
 
-        if(not totp_check):
-           print("One Time Password inválido")
-           return
+        if (not totp_check):
+            print("One Time Password inválido")
+            return
 
         print("Usuário autenticado")
+
+    def receber_mensagem(self,  nome: str, mensagem_encriptada: dict):
+        try:
+            usuario = self.obter_usuario_por_nome(nome)
+        except KeyError:
+            print(f"Usuário com o nome {nome} não localizado")
+            return
+
+        totp_secret = usuario["pyotp_secret"]
+        totp = pyotp.TOTP(totp_secret)
+        chave = self.derivar_chave(totp_secret, totp.now())
+        mensagem = self.decriptar_mensagem(mensagem_encriptada, chave)
+        print(mensagem)
 
     def obter_usuario_por_nome(self, nome):
 
@@ -85,6 +100,18 @@ class Server:
             senha_bytes, salt=salt, n=cost_factor, r=block_size, p=parallelization_factor, dklen=derived_key_length)
 
         return senha_hashed, salt
+
+    def derivar_chave(self, secret: str, totp_code: str):
+        return hmac.new(secret.encode(), totp_code.encode(), hashlib.sha256).digest()
+
+    def decriptar_mensagem(self, mensagem_encriptada: dict, chave: bytes):
+        aesgcm = AESGCM(chave)
+        mensagem = aesgcm.decrypt(
+            mensagem_encriptada["iv"],
+            mensagem_encriptada["ciphertext"],
+            None
+        )
+        return mensagem.decode()
 
 
 def encodeStrToBase64(bytes: bytes):
