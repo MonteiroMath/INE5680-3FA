@@ -38,7 +38,7 @@ class Server:
             usuario = self.obter_usuario_por_nome(nome)
         except KeyError:
             print(f"Usuário com o nome {nome} não localizado")
-            return
+            return False
 
         senha_registrada = decodeStrFromBase64(usuario["senha"])
         salt = usuario["salt"]
@@ -47,20 +47,21 @@ class Server:
 
         if (not (senha_hashed == senha_registrada)):
             print("Senha incorreta")
-            return
+            return False
 
         if (not (pais == usuario["pais"])):
             print("Localização inválida")
-            return
+            return False
 
         totp = pyotp.TOTP(usuario["pyotp_secret"])
         totp_check = totp.verify(totp_code)
 
         if (not totp_check):
             print("One Time Password inválido")
-            return
+            return False
 
         print("Usuário autenticado")
+        return True
 
     def receber_mensagem(self,  nome: str, mensagem_encriptada: dict):
         try:

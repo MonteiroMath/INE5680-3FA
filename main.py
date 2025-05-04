@@ -17,9 +17,8 @@ client.store_totp_secret(senha, pyotp_secret)
 nome, senha, pais, totp_code = client.logar_usuario()
 
 # Solicita login ao servidor
-server.autenticar_usuario(nome, senha, pais, totp_code)
+autenticado = server.autenticar_usuario(nome, senha, pais, totp_code)
 
-
-
-mensagem = client.enviar_mensagem()
-server.receber_mensagem(nome, mensagem)
+if(autenticado):
+  mensagem = client.enviar_mensagem()
+  server.receber_mensagem(nome, mensagem)
