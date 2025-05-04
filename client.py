@@ -20,28 +20,38 @@ class Client:
         self._nome_usuario = None
 
     def cadastrar_usuario(self):
+
+        # Obtenção de input do usuário
         print("Cadastro: ")
         nome = input("Informe seu nome: ")
         senha = input("Informe sua senha: ")
         pais = self.obter_pais()
 
+        # Requisição ao servidor
         totp_secret = self.requisitar_cadastro(nome, senha, pais)
         print("Usuário cadastrado")
 
+        # Armazenamento do segredo totp
         self.store_totp_secret(senha, totp_secret)
         print("Segredo totp armazenado")
 
     def logar_usuario(self):
+
+        # Obtenção de input do usuário
         print("Login: ")
         nome = input("Informe seu nome: ")
         senha = input("Informe sua senha: ")
         pais = self.obter_pais()
 
+        # Recuperação do segredo totp
         self.carregar_totp_secret(senha)
         print("Segredo totp recuperado")
+
+        # obtenção de código totp
         totp = pyotp.TOTP(self._secret)
         totp_code = totp.now()
 
+        # Requisição ao servidor
         isAutenticado = self.requisitar_autenticacao(
             nome, senha, pais, totp_code)
 
@@ -53,11 +63,13 @@ class Client:
         self._nome_usuario = nome
 
     def enviar_mensagem(self):
+        # Obtenção de input do usuário
         mensagem = input("Digita uma mensagem: ")
 
-        # criptografa mensagem
+        # criptografia da mensagem
         mensagem_criptografada = self.criptografar_mensagem(mensagem)
 
+        # Requisição ao servidor
         self.requisitar_envio_mensagem(
             self._nome_usuario, mensagem_criptografada)
 
