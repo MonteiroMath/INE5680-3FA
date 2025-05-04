@@ -13,15 +13,23 @@ load_dotenv()
 
 class Client:
 
-    def __init__(self):
+    def __init__(self, server):
+
+        self._server = server
         self._secret = None
+        self._nome_usuario = None
 
     def cadastrar_usuario(self):
         print("Cadastro: ")
         nome = input("Informe seu nome: ")
         senha = input("Informe sua senha: ")
         pais = self.obter_pais()
-        return (nome, senha, pais)
+
+        totp_secret = self.requisitar_cadastro(nome, senha, pais)
+        print("Usuário cadastrado")
+
+        self.store_totp_secret(senha, totp_secret)
+        print("Segredo totp armazenado")
 
     def logar_usuario(self):
         print("Login: ")
@@ -30,16 +38,28 @@ class Client:
         pais = self.obter_pais()
 
         self.carregar_totp_secret(senha)
+        print("Segredo totp recuperado")
         totp = pyotp.TOTP(self._secret)
         totp_code = totp.now()
-        return (nome, senha, pais, totp_code)
+
+        isAutenticado = self.requisitar_autenticacao(
+            nome, senha, pais, totp_code)
+
+        if (not isAutenticado):
+            print("Usuário não autenticado.")
+            return
+
+        # Armazena nome do usuário logado
+        self._nome_usuario = nome
 
     def enviar_mensagem(self):
         mensagem = input("Digita uma mensagem: ")
 
-        mensagem_encriptada = self.criptografar_mensagem(mensagem)
+        # criptografa mensagem
+        mensagem_criptografada = self.criptografar_mensagem(mensagem)
 
-        return mensagem_encriptada
+        self.requisitar_envio_mensagem(
+            self._nome_usuario, mensagem_criptografada)
 
     def obter_pais(self):
         # obtem localização do usuário (país) a partir do ip do usuário
@@ -92,7 +112,7 @@ class Client:
         return hmac.new(secret.encode(), totp_code.encode(), hashlib.sha256).digest()
 
     def criptografar_mensagem(self, mensagem: str):
-        
+
         # criptografa mensagem utilizando o segredo totp e o totp para derivar uma chave
         totp = pyotp.TOTP(self._secret)
         totp_code = totp.now()
@@ -104,3 +124,13 @@ class Client:
             "iv": iv,
             "ciphertext": ciphertext
         }
+
+    # Funções para fazer requisições ao servidor
+    def requisitar_cadastro(self, nome, senha, pais):
+        return self._server.adicionar_usuario(nome, senha, pais)
+
+    def requisitar_autenticacao(self, nome, senha, pais, totp_code):
+        return self._server.autenticar_usuario(nome, senha, pais, totp_code)
+
+    def requisitar_envio_mensagem(self, nome_usuario, mensagem):
+        return self._server.receber_mensagem(nome_usuario, mensagem)
