@@ -37,12 +37,12 @@ class Client:
     def enviar_mensagem(self):
         mensagem = input("Digita uma mensagem: ")
 
-        mensagem_encriptada = self.encriptar_mensagem(mensagem)
+        mensagem_encriptada = self.criptografar_mensagem(mensagem)
 
         return mensagem_encriptada
 
     def obter_pais(self):
-
+        # obtem localização do usuário (país) a partir do ip do usuário
         access_token = os.environ["API_KEY"]
         handler = ipinfo.getHandler(access_token)
         details = handler.getDetails()
@@ -50,6 +50,7 @@ class Client:
         return details.country_name
 
     def store_totp_secret(self, senha: str, totp_secret: str):
+        # Guarda o segredo do totp em um arquivo criptografado. Utiliza a senha do usuário para derivar a chave.
 
         salt = os.urandom(16)
         chave = self.derivar_chave_armazenamento_local(
@@ -61,6 +62,7 @@ class Client:
             f.write(salt+secret_criptografado)
 
     def carregar_totp_secret(self, senha: str):
+        # Recupera o segredo do totp de um arquivo criptogrado. Utiliza a senha do usuário na reviação da chave.
         with open("totp_secret.txt", "rb") as f:
             data = f.read()
 
@@ -72,7 +74,9 @@ class Client:
         self._secret = secret.decode()
 
     def derivar_chave_armazenamento_local(self, password: str, salt: bytes) -> bytes:
+        # Deriva chave para armazenamento do totp em arquivo local. Utiliza a senha do usuário na derivação
 
+        # Parâmetros para SCRYPT conforme documentação: https://docs.python.org/3/library/hashlib.html#hashlib.scrypt
         cost_factor = 2**14
         block_size = 8
         parallelization_factor = 1
@@ -81,16 +85,18 @@ class Client:
         key = hashlib.scrypt(password.encode(), salt=salt, n=cost_factor,
                              r=block_size, p=parallelization_factor, dklen=derived_key_length)
 
-        return base64.urlsafe_b64encode(key)
+        return base64.b64encode(key)
 
-    def derivar_chave(self, secret: str, totp_code: str):
+    def derivar_chave_mensagem(self, secret: str, totp_code: str):
+        # Deriva chave para criptografar mensagem. Utiliza o segredo do totp e o totp na derivação
         return hmac.new(secret.encode(), totp_code.encode(), hashlib.sha256).digest()
 
-    def encriptar_mensagem(self, mensagem: str):
-
+    def criptografar_mensagem(self, mensagem: str):
+        
+        # criptografa mensagem utilizando o segredo totp e o totp para derivar uma chave
         totp = pyotp.TOTP(self._secret)
         totp_code = totp.now()
-        chave = self.derivar_chave(self._secret, totp_code)
+        chave = self.derivar_chave_mensagem(self._secret, totp_code)
         aesgcm = AESGCM(chave)
         iv = os.urandom(12)
         ciphertext = aesgcm.encrypt(iv, mensagem.encode(), None)

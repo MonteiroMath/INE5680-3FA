@@ -34,25 +34,28 @@ class Server:
 
     def autenticar_usuario(self, nome: str, senha: str, pais: str, totp_code: str):
 
+        # Recupera dados do usuário
         try:
             usuario = self.obter_usuario_por_nome(nome)
         except KeyError:
             print(f"Usuário com o nome {nome} não localizado")
             return False
 
+        # Compara hash da senha recebida com o hash da senha gravada em "banco"
         senha_registrada = decodeStrFromBase64(usuario["senha"])
         salt = usuario["salt"]
-
         senha_hashed, _ = self.hash_senha(senha, decodeStrFromBase64(salt))
 
         if (not (senha_hashed == senha_registrada)):
             print("Senha incorreta")
             return False
 
+        # Impede login se a localização por diferente
         if (not (pais == usuario["pais"])):
             print("Localização inválida")
             return False
 
+        # Impede login se totp for invalido
         totp = pyotp.TOTP(usuario["pyotp_secret"])
         totp_check = totp.verify(totp_code)
 
@@ -64,12 +67,15 @@ class Server:
         return True
 
     def receber_mensagem(self,  nome: str, mensagem_encriptada: dict):
+
+        # Recupera usuario do banco
         try:
             usuario = self.obter_usuario_por_nome(nome)
         except KeyError:
             print(f"Usuário com o nome {nome} não localizado")
             return
 
+        # Obtém segredo to TOTP, gera um TOTP e o utiliza para derivar a chave de descriptação
         totp_secret = usuario["pyotp_secret"]
         totp = pyotp.TOTP(totp_secret)
         chave = self.derivar_chave(totp_secret, totp.now())
@@ -77,7 +83,6 @@ class Server:
         print(mensagem)
 
     def obter_usuario_por_nome(self, nome):
-
         return self._usuarios[nome]
 
     def hash_senha(self, senha: str, salt: bytes = None):
@@ -102,9 +107,11 @@ class Server:
         return senha_hashed, salt
 
     def derivar_chave(self, secret: str, totp_code: str):
+        # Deriva uma chave a partir do segredo do totp e de um código de totp
         return hmac.new(secret.encode(), totp_code.encode(), hashlib.sha256).digest()
 
     def decriptar_mensagem(self, mensagem_encriptada: dict, chave: bytes):
+        # descripta mensagem usando AESGCM e uma chave gerada a partir do TOTP
         aesgcm = AESGCM(chave)
         mensagem = aesgcm.decrypt(
             mensagem_encriptada["iv"],
@@ -113,6 +120,7 @@ class Server:
         )
         return mensagem.decode()
 
+# Funções de utilidade 
 
 def encodeStrToBase64(bytes: bytes):
     # Encoda uma sequencia de bytes em base64, decoda e retorna a string equivalente
