@@ -1,6 +1,8 @@
 import os
 import hmac
 import hashlib
+import base64
+from cryptography.fernet import Fernet
 import ipinfo
 from dotenv import load_dotenv
 import pyotp
@@ -46,8 +48,30 @@ class Client:
 
         return details.country_name
 
-    def store_totp_secret(self, secret: str):
-        self._secret = secret
+    def store_totp_secret(self, senha: str, totp_secret: str):
+
+        salt = os.urandom(16)
+        chave = self.derivar_chave_armazenamento_local(
+            senha, salt)
+        cipher = Fernet(chave)
+        secret_criptografado = cipher.encrypt(totp_secret.encode())
+
+        with open("totp_secret.txt", "wb") as f:
+            f.write(salt+secret_criptografado)
+
+        self._secret = totp_secret
+
+    def derivar_chave_armazenamento_local(self, password: str, salt: bytes) -> bytes:
+
+        cost_factor = 2**14
+        block_size = 8
+        parallelization_factor = 1
+        derived_key_length = 32
+
+        key = hashlib.scrypt(password.encode(), salt=salt, n=cost_factor,
+                             r=block_size, p=parallelization_factor, dklen=derived_key_length)
+
+        return base64.urlsafe_b64encode(key)
 
     def derivar_chave(self, secret: str, totp_code: str):
         return hmac.new(secret.encode(), totp_code.encode(), hashlib.sha256).digest()
