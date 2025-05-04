@@ -29,6 +29,7 @@ class Client:
         senha = input("Informe sua senha: ")
         pais = self.obter_pais()
 
+        self.carregar_totp_secret(senha)
         totp = pyotp.TOTP(self._secret)
         totp_code = totp.now()
         return (nome, senha, pais, totp_code)
@@ -59,7 +60,16 @@ class Client:
         with open("totp_secret.txt", "wb") as f:
             f.write(salt+secret_criptografado)
 
-        self._secret = totp_secret
+    def carregar_totp_secret(self, senha: str):
+        with open("totp_secret.txt", "rb") as f:
+            data = f.read()
+
+        salt = data[:16]
+        secret_criptografado = data[16:]
+        chave = self.derivar_chave_armazenamento_local(senha, salt)
+        cipher = Fernet(chave)
+        secret = cipher.decrypt(secret_criptografado)
+        self._secret = secret.decode()
 
     def derivar_chave_armazenamento_local(self, password: str, salt: bytes) -> bytes:
 
